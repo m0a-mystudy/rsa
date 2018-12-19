@@ -21,7 +21,16 @@ class ViewController: UIViewController {
         
         // Then you can use:
         let base64String = encrypted.base64String
-        print("base64String= ",base64String)
+        print("padding:OAEP base64String= ",base64String)
+        
+        // plcs1 pattern
+        do {
+            let encrypted = try! clear.encrypted(with: publicKey[0], padding: .PKCS1)
+            let base64String = encrypted.base64String
+            print("padding:PKCS1 base64String= ",base64String)
+        }
+        
+        
     }
 
 

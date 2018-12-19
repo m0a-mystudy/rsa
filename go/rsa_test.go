@@ -36,7 +36,25 @@ func init() {
 	test2048Key.Precompute()
 }
 
-func TestDecodeFromiOS(t *testing.T) {
+func TestPKCSEncryptFromiOS(t *testing.T) {
+	base64Text := "Np06HdmfPMT8zpAYH3Xdx9Rb38RSJqg59sK80DyMvgNHxP0O7pkwV2vbyxPs954YXPGSAOerQ/cPKZKnaROUdx3+nZOzkZ64UjRBae6aOegpsdIScQi4cGXUGKQKPCuoDotCZMRYngKdh8AgaQjqcrnEzYVFU9LYyhioNIiEIrdWu/VY8abE6ij8OLGWExHgBI+wxLUvmxu5Waa06aX+GeEhoX/6AjUegkvp/YSZLRftOQaPa98o1YRkH4E77tZeB/2yluzqWadQTQyH7bwhoVW2t94ElVxTrmK93ME4yFVzz87k32LNMUxuzO9VHanaFZjdE8dSRSmgXv4SV2pGhg=="
+	expectPlainText := "hello rsa"
+
+	chiper, _ := base64.StdEncoding.DecodeString(base64Text)
+	rng := rand.Reader
+
+	plaintext, err := rsa.DecryptPKCS1v15(rng, test2048Key, chiper)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error from decryption: %s\n", err)
+		t.Fatal()
+	}
+
+	if string(plaintext) != expectPlainText {
+		t.Fatalf("expect %s but %s", expectPlainText, string(plaintext))
+	}
+}
+
+func TestOAEPEncryptFromiOS(t *testing.T) {
 	base64Text := "KeWgyOzzPPGZuPr6p1aKNKnH40HFeYnyuXmLYW3pjwsl30eWHFL9TD0fwkQu9coFvWbfmflvCBwHoM4Qn2uWz/g97v2HRw5tW5PD+rW/y1O3bEbt5TlOnieuY8YUXdbHSwNQAOY4b6nVuGZN4eMZQI4d/6U+CRM9K8U1pYe00im7zZGya1wlxfaNGGE38RIfITilnrYWjVA7fCDa/Uif34wQtT7WPkax+4I0dZM+0THu3pT2StRgvtBoPKIzMyazlFLXyy6xt5vWHsRPEjdZRp51Id8Ll33Uj+3NnpKVRYDlDMRmQuR5LPsEw3HXtPKsZtLmdZU1XqyxOqpGQzwrlA=="
 	expectPlainText := "hello rsa"
 	label := []byte("")
