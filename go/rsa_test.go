@@ -4,9 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
-	"crypto/x509"
-	"encoding/hex"
-	"encoding/pem"
+	"encoding/base64"
 	"fmt"
 	"math/big"
 	"os"
@@ -38,68 +36,28 @@ func init() {
 	test2048Key.Precompute()
 }
 
-func TestOAEP(t *testing.T) {
-	secretMessage := []byte("send reinforcements, we're going to advance")
-	label := []byte("orders")
+func TestDecodeFromiOS(t *testing.T) {
+	base64Text := "KeWgyOzzPPGZuPr6p1aKNKnH40HFeYnyuXmLYW3pjwsl30eWHFL9TD0fwkQu9coFvWbfmflvCBwHoM4Qn2uWz/g97v2HRw5tW5PD+rW/y1O3bEbt5TlOnieuY8YUXdbHSwNQAOY4b6nVuGZN4eMZQI4d/6U+CRM9K8U1pYe00im7zZGya1wlxfaNGGE38RIfITilnrYWjVA7fCDa/Uif34wQtT7WPkax+4I0dZM+0THu3pT2StRgvtBoPKIzMyazlFLXyy6xt5vWHsRPEjdZRp51Id8Ll33Uj+3NnpKVRYDlDMRmQuR5LPsEw3HXtPKsZtLmdZU1XqyxOqpGQzwrlA=="
+	expectPlainText := "hello rsa"
+	label := []byte("")
 
-	// crypto/rand.Reader is a good source of entropy for randomizing the
-	// encryption function.
+	chiper, _ := base64.StdEncoding.DecodeString(base64Text)
 	rng := rand.Reader
-
-	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rng, &test2048Key.PublicKey, secretMessage, label)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error from encryption: %s\n", err)
-		return
-	}
-
-	encodedStr := hex.EncodeToString(ciphertext)
-	t.Errorf("encode str = %s", encodedStr)
-	chiper, _ := hex.DecodeString(encodedStr)
 
 	plaintext, err := rsa.DecryptOAEP(sha256.New(), rng, test2048Key, chiper, label)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error from decryption: %s\n", err)
-		return
+		t.Fatal()
 	}
 
 	t.Errorf("Plaintext: %s\n", string(plaintext))
 
-	pemPrivateBlock := &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(test2048Key),
+	if string(plaintext) != expectPlainText {
+		t.Fatalf("expect %s but %s", expectPlainText, string(plaintext))
 	}
-
-	pemPublicBlock := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(&test2048Key.PublicKey),
-	}
-
-	pemPrivateFile, err := os.Create("private_key.pem")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	err = pem.Encode(pemPrivateFile, pemPrivateBlock)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	pemPrivateFile.Close()
-
-	pemPublicFile, err := os.Create("public_key.pem")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	err = pem.Encode(pemPublicFile, pemPublicBlock)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	pemPublicFile.Close()
 }
 
-// func TestEncOAEP(t *testing.T) {
+// func TestOAEP(t *testing.T) {
 // 	secretMessage := []byte("send reinforcements, we're going to advance")
 // 	label := []byte("orders")
 
@@ -113,21 +71,11 @@ func TestOAEP(t *testing.T) {
 // 		return
 // 	}
 
-// 	// Since encryption is a randomized function, ciphertext will be
-// 	// different each time.
-// 	// t.Lo("Ciphertext: %x\n", ciphertext)
-// 	t.Errorf("ciphertext =  %x", ciphertext)
-// }
+// 	encodedStr := hex.EncodeToString(ciphertext)
+// 	t.Errorf("encode str = %s", encodedStr)
+// 	chiper, _ := hex.DecodeString(encodedStr)
 
-// func TestDevOAEP(t *testing.T) {
-// 	ciphertext, _ := hex.DecodeString("4d1ee10e8f286390258c51a5e80802844c3e6358ad6690b7285218a7c7ed7fc3a4c7b950fbd04d4b0239cc060dcc7065ca6f84c1756deb71ca5685cadbb82be025e16449b905c568a19c088a1abfad54bf7ecc67a7df39943ec511091a34c0f2348d04e058fcff4d55644de3cd1d580791d4524b92f3e91695582e6e340a1c50b6c6d78e80b4e42c5b4d45e479b492de42bbd39cc642ebb80226bb5200020d501b24a37bcc2ec7f34e596b4fd6b063de4858dbf5a4e3dd18e262eda0ec2d19dbd8e890d672b63d368768360b20c0b6b8592a438fa275e5fa7f60bef0dd39673fd3989cc54d2cb80c08fcd19dacbc265ee1c6014616b0e04ea0328c2a04e73460")
-// 	label := []byte("orders")
-
-// 	// crypto/rand.Reader is a good source of entropy for blinding the RSA
-// 	// operation.
-// 	rng := rand.Reader
-
-// 	plaintext, err := rsa.DecryptOAEP(sha256.New(), rng, test2048Key, ciphertext, label)
+// 	plaintext, err := rsa.DecryptOAEP(sha256.New(), rng, test2048Key, chiper, label)
 // 	if err != nil {
 // 		fmt.Fprintf(os.Stderr, "Error from decryption: %s\n", err)
 // 		return
@@ -135,7 +83,37 @@ func TestOAEP(t *testing.T) {
 
 // 	t.Errorf("Plaintext: %s\n", string(plaintext))
 
-// 	// Remember that encryption only provides confidentiality. The
-// 	// ciphertext should be signed before authenticity is assumed and, even
-// 	// then, consider that messages might be reordered.
+// 	pemPrivateBlock := &pem.Block{
+// 		Type:  "RSA PRIVATE KEY",
+// 		Bytes: x509.MarshalPKCS1PrivateKey(test2048Key),
+// 	}
+
+// 	pemPublicBlock := &pem.Block{
+// 		Type:  "RSA PUBLIC KEY",
+// 		Bytes: x509.MarshalPKCS1PublicKey(&test2048Key.PublicKey),
+// 	}
+
+// 	pemPrivateFile, err := os.Create("private_key.pem")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		os.Exit(1)
+// 	}
+// 	err = pem.Encode(pemPrivateFile, pemPrivateBlock)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		os.Exit(1)
+// 	}
+// 	pemPrivateFile.Close()
+
+// 	pemPublicFile, err := os.Create("public_key.pem")
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		os.Exit(1)
+// 	}
+// 	err = pem.Encode(pemPublicFile, pemPublicBlock)
+// 	if err != nil {
+// 		fmt.Println(err)
+// 		os.Exit(1)
+// 	}
+// 	pemPublicFile.Close()
 // }
