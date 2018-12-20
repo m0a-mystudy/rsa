@@ -4,7 +4,9 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
 	"fmt"
 	"math/big"
 	"os"
@@ -36,9 +38,39 @@ func init() {
 	test2048Key.Precompute()
 }
 
+func ReadRsaPrivateKey(privateKey string) *rsa.PrivateKey {
+
+	// decode pem
+	block, _ := pem.Decode([]byte(privateKey))
+
+	if block == nil || block.Type != "RSA PRIVATE KEY" {
+		// c.Logger().Warnf("failed to invalid pem decode. block nil or Not [RSA PRIVATE KEY] type.")
+		return nil
+	}
+
+	// get key
+	var key *rsa.PrivateKey
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		// c.Logger().Warnf("failed to parse block bytes as private key. :%s", err.Error())
+		return nil
+	}
+
+	key.Precompute()
+
+	if err := key.Validate(); err != nil {
+		// c.Logger().Warnf("failed to validate performs basic sanity checks on the private key. :%s", err.Error())
+		return nil
+	}
+
+	return key
+}
+
 func TestPKCSEncryptFromiOS(t *testing.T) {
-	base64Text := "Np06HdmfPMT8zpAYH3Xdx9Rb38RSJqg59sK80DyMvgNHxP0O7pkwV2vbyxPs954YXPGSAOerQ/cPKZKnaROUdx3+nZOzkZ64UjRBae6aOegpsdIScQi4cGXUGKQKPCuoDotCZMRYngKdh8AgaQjqcrnEzYVFU9LYyhioNIiEIrdWu/VY8abE6ij8OLGWExHgBI+wxLUvmxu5Waa06aX+GeEhoX/6AjUegkvp/YSZLRftOQaPa98o1YRkH4E77tZeB/2yluzqWadQTQyH7bwhoVW2t94ElVxTrmK93ME4yFVzz87k32LNMUxuzO9VHanaFZjdE8dSRSmgXv4SV2pGhg=="
+	base64Text := "YiRsWHHMSPMIY0UWv3H1q01WFz9KEFBeP3bao4cSRb2Xw3qC46baST1FEXdSqQHLkXRKOApXsIXHYxEA0hTKFVskPyrsfyiy8PLh0BlcpSdC386sOFKjDmJc7JLQJWqyQ3NA0G6dh1OvaxzMKF1lgNHUi1uUqeHovFqKLIviZVyBjqeKIJYNTXXuakMVh6AhGe2fV4BnJeg+e7bJ3Ena6ZqWPN+j/EekEFuzxU8WTlJgnBmfJEQy0P6NzCSwgYjV5NziswW/gCBNx7yttLiOOJ516N/2KF5JoLn7Al0ceFgmIoMLrkiRwHZJovfg2G8JbdAWLVoWpVVpwMIM5ngwSw=="
 	expectPlainText := "hello rsa"
+
+	test2048Key = ReadRsaPrivateKey("-----BEGIN RSA PRIVATE KEY-----\nMIIEnwIBAAKCAQBxY8hCshkKiXCUKydkrtQtQSRke28w4JotocDiVqou4k55DEDJ\nakvWbXXDcakV4HA8R2tOGgbxvTjFo8EK470w9O9ipapPUSrRRaBsSOlkaaIs6OYh\n4FLwZpqMNBVVEtguVUR/C34Y2pS9kRrHs6q+cGhDZolkWT7nGy5eSEvPDHg0EBq1\n1hu6HmPmI3r0BInONqJg2rcK3U++wk1lnbD3ysCZsKOqRUms3n/IWKeTqXXmz2XK\nJ2t0NSXwiDmA9q0Gm+w0bXh3lzhtUP4MlzS+lnx9hK5bjzSbCUB5RXwMDG/uNMQq\nC4MmA4BPceSfMyAIFjdRLGy/K7gbb2viOYRtAgEDAoIBAEuX2tchZgcGSw1yGkMf\nOB4rbZhSSiCVvB5r1ew5xsnsNFCy1ducMo7zo9ehG2Pq9X2E8jQRWfZ+JdkX1gdC\nfiCjSkHDxt+LceDZFZ2F8O2bwXNF7sFAN0rvEbLNY44MkB7jgv9c/rs8YykLZy/N\nHH71mteZsO2Q1JoSHumFh99cwWHFhLxYh64qFeeH6Gqx6AM2YVBWHgs7OuKOvc8y\nzUbf8xftPht1kMwwDR1XySiEYtBtn74JflK3DcT8oxOuCZBuX6sMJHKbVP41zDj+\nFJZBmpAvNfCEYJUr1Hg+DpMLqLUg+D6v5vpliburbk9LxcKFZyyZ9QVe7GoqMLBu\neGsCgYEAummUj4MMKWJC2mv5rj/dt2pj2/B2HtP2RLypai4et1/Ru9nNk8cjMLzC\nqXz6/RLuJ7/eD7asFS3y7EqxKxEmW0G8tTHjnzR/3wnpVipuWnwCDGU032HJVd13\nLMe51GH97qLzuDZjMCz+VlbCNdSslMgWWK0XmRnN7Yqxvh6ao2kCgYEAm7fTRBhF\nJtKcaJ7d8BQb9l8BNHfjayYOMq5CxoCyxa2pGBv/Mrnxv73Twp9Z/MP0ue5M5nZt\nGMovpP5cGdJLQ2w5p4H3opcuWeYW9Yyru2EyCEAI/hD/Td3QVP0ukc19BDuPl5Wg\neIFs218uiVOU4pw3w+Et5B1PZ/F+ZLr5LGUCgYB8RmMKV11w7CyRnVEe1T56Ru09\nSvlp4qQt0xucHr8k6ovSkTO32hd10yxw/fyot0lv1T61JHK4yUydhyDHYMQ81n3O\nIUJqIv/qBpuOxvQ8UqwIQ3iU69uOk6TIhSaNlqlJwffQJEIgHf7kOdbOjchjMA7l\nyLpmETPzscvUFGcXmwKBgGfP4i1lg283EvBp6Uq4EqQ/ViL6l5zECXce1y8Ady5z\nxhASqiHRS9UpN9cU5qiCoyae3e75nhCGym3+6BE23Nede8UBT8G6HuaZZKOzHSeW\nIVrVW1QLVN6T4DioybaI/gLSX7pjwFBWSJI/dFuNDexoJS1AyUK+NO/2VEMnUMhD\nAoGAOsdn3Prnh/mjC95vraHCLap0bRBSexMdx77ImHgtFUUcSaT8DJHs+NZw1RdM\nSZA0J+zVQ8q7B11jIgz5hMz+chedwoRjTL7a8VRTKHFmmBH0zlEuV7L79w6HkRCQ\nVRg10GUN6heGLv0aOHbPdobcuVDH4sgOqpT1QnOuce34sQs=\n-----END RSA PRIVATE KEY-----\n")
 
 	chiper, _ := base64.StdEncoding.DecodeString(base64Text)
 	rng := rand.Reader
