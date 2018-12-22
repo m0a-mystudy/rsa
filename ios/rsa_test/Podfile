@@ -7,6 +7,7 @@ target 'rsa_test' do
 
   # Pods for rsa_test
   pod 'SwiftyRSA'
+  pod 'SwCrypt'
 
   target 'rsa_testTests' do
     inherit! :search_paths
