@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		48F6687BD6DCF5B114DEA43D /* Pods_rsa_testTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4EE632C6E9FB30552336173E /* Pods_rsa_testTests.framework */; };
+		4FAE9A2F21CF85500007BE17 /* public_key.pem in Resources */ = {isa = PBXBuildFile; fileRef = 4FAE9A2E21CF85500007BE17 /* public_key.pem */; };
+		4FAE9A3021CF88BA0007BE17 /* public_key.pem in Resources */ = {isa = PBXBuildFile; fileRef = 4FAE9A2E21CF85500007BE17 /* public_key.pem */; };
 		4FDAD7FD21C9D695006C8BBE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDAD7FC21C9D695006C8BBE /* AppDelegate.swift */; };
 		4FDAD7FF21C9D695006C8BBE /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FDAD7FE21C9D695006C8BBE /* ViewController.swift */; };
 		4FDAD80221C9D695006C8BBE /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 4FDAD80021C9D695006C8BBE /* Main.storyboard */; };
@@ -43,6 +45,7 @@
 		302F7104F5DB9F64E50DED99 /* Pods-rsa_test.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-rsa_test.release.xcconfig"; path = "Pods/Target Support Files/Pods-rsa_test/Pods-rsa_test.release.xcconfig"; sourceTree = "<group>"; };
 		43A5ED1E2C9FA3A9AE69FFD6 /* Pods_rsa_testUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_rsa_testUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4EE632C6E9FB30552336173E /* Pods_rsa_testTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_rsa_testTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FAE9A2E21CF85500007BE17 /* public_key.pem */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = public_key.pem; path = ../../../go/public_key.pem; sourceTree = "<group>"; };
 		4FDAD7F921C9D695006C8BBE /* rsa_test.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = rsa_test.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FDAD7FC21C9D695006C8BBE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		4FDAD7FE21C9D695006C8BBE /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -140,6 +143,7 @@
 		4FDAD81021C9D697006C8BBE /* rsa_testTests */ = {
 			isa = PBXGroup;
 			children = (
+				4FAE9A2E21CF85500007BE17 /* public_key.pem */,
 				4FDAD81121C9D697006C8BBE /* rsa_testTests.swift */,
 				4FDAD81321C9D697006C8BBE /* Info.plist */,
 			);
@@ -273,6 +277,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FAE9A3021CF88BA0007BE17 /* public_key.pem in Resources */,
 				4FDAD80721C9D696006C8BBE /* LaunchScreen.storyboard in Resources */,
 				4FDAD80421C9D696006C8BBE /* Assets.xcassets in Resources */,
 				4FDAD80221C9D695006C8BBE /* Main.storyboard in Resources */,
@@ -283,6 +288,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4FAE9A2F21CF85500007BE17 /* public_key.pem in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
