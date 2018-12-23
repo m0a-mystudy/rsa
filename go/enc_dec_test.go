@@ -5,12 +5,42 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"testing"
 )
+
+func TestDecforiOS(t *testing.T) {
+	base64Text := "BBQQRNm9c+magYbq3eXN7ydzdCKSOGy1FmjHIwT2PzLTHnJbZ65f83RY3N8/iyNhBB+RSe9SjXZYz8qIr529bTSyUSmcxeK5Etsc8wsGLLwXkbdcLrYImiU0YC6ymIKAzxeJT9ObMMcopdsUYrxe2laVg6Wio+29RLs1WWaELJvWml2rkMX/uWEm9VpWqcwiBZmBT9GyrR8C71yOr5dtsuxMIIOJlhqq7S2FYRix3GStZyHRXnOBY+hob9+XFVXDMtVkibi8Sx5wK3asD0zrniz2o0DX7GDkZvDbqj45zi16kXv8ZpxIl9jH343NfV8YX7g/rbmI6P/rB6AUjjb7gQ=="
+	expectMessage := "hello ios rsa"
+
+	privateKey, err := readRsaPrivateKey("private_key.pem")
+	if err != nil {
+		t.Errorf("sorry. can't read privatekey err=%s", err.Error())
+	}
+	rng := rand.Reader
+	label := []byte("label")
+
+	ciphertext, _ := base64.StdEncoding.DecodeString(base64Text)
+
+	t.Logf("ciphertext = %s", ciphertext)
+	// 復号
+	plaintext, err := rsa.DecryptOAEP(sha256.New(), rng, privateKey, ciphertext, label)
+	if err != nil {
+		t.Errorf("Error from decryption: %s\n", err)
+		return
+	}
+
+	t.Logf("Plaintext: %s\n", string(plaintext))
+
+	if expectMessage != string(plaintext) {
+		t.Fatalf("expect %s, but %s", expectMessage, string(plaintext))
+	}
+
+}
 
 func TestEncDec(t *testing.T) {
 	privateKey, err := readRsaPrivateKey("private_key.pem")
