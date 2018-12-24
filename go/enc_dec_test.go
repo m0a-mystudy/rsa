@@ -39,11 +39,10 @@ func TestDecforSwiftyRSA(t *testing.T) {
 	if expectMessage != string(plaintext) {
 		t.Fatalf("expect %s, but %s", expectMessage, string(plaintext))
 	}
-
 }
 
 func TestDecforSwCrypt(t *testing.T) {
-	base64Text := "BBQQRNm9c+magYbq3eXN7ydzdCKSOGy1FmjHIwT2PzLTHnJbZ65f83RY3N8/iyNhBB+RSe9SjXZYz8qIr529bTSyUSmcxeK5Etsc8wsGLLwXkbdcLrYImiU0YC6ymIKAzxeJT9ObMMcopdsUYrxe2laVg6Wio+29RLs1WWaELJvWml2rkMX/uWEm9VpWqcwiBZmBT9GyrR8C71yOr5dtsuxMIIOJlhqq7S2FYRix3GStZyHRXnOBY+hob9+XFVXDMtVkibi8Sx5wK3asD0zrniz2o0DX7GDkZvDbqj45zi16kXv8ZpxIl9jH343NfV8YX7g/rbmI6P/rB6AUjjb7gQ=="
+	base64Text := "N9QE8lG5A9LRRprfwkzAxoldJkNSJqEQ/gLAcNjMFbLgcGu2yffY3x91/DOCApsxtAU3I7GTCnk0TOTV5Y32zVqOE7S+GksCFFa7iDLsqYvQbKJZXcb8bTe4p93SPU+RBkH0r/H8NBTUDSvNtARcXntqWNwr0FNAW2HH/Ht+ZmL1pWMa0MmdXLc/+4S/KFjlip/b5neMw6EoQkfNNDz8i7+IHiIpz+vJ2ZFvpf8RGXLgUTMGdUrQfv+XyLZZAnYny5a8HzuMbEcSunez0G7T25NGj6ubJJ2zalLACV1GysolOAJFn6YD6jSukDGQmHKlL1JOkKhqUm9EZT6Mw7wBkQ=="
 	expectMessage := "hello ios rsa"
 
 	privateKey, err := readRsaPrivateKey("private_key.pem")
