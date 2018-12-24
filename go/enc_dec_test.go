@@ -3,6 +3,7 @@ package rsa_test
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
@@ -13,7 +14,35 @@ import (
 	"testing"
 )
 
-func TestDecforiOS(t *testing.T) {
+func TestDecforSwiftyRSA(t *testing.T) {
+	base64Text := "lqEicpwE0xPg9iXdn2xSQLeoIEkwvKdxGBMrjwHxW2S5x7IuhrWCnWnFZ1w0nd21nCuZfveW29nCzekvJEBji8W+HcbwQUapIcRoENp6+IkcjISnOR9hR5ZOJBUNP7X0eLniFHuqPXuySWuzGXJIfP2P8iBwFEC0AvUTGUfpXdYEoRP5uEExHBdxw/WywtjocGkgz+sbmBzgCdN+BmAas8h/RdsYI2D83VyvG492Hp45SR+vgoyv4TbqcWZqdPC6T4ZFurQvZKlMKT5Xfhe4WTQUVL1fKvFWGkxXhIesKmxZpvIfKqLF7ZuGs13RJaIDvF6i71fvmF7rN2fvE/iuoA=="
+	expectMessage := "hello ios rsa"
+
+	privateKey, err := readRsaPrivateKey("private_key.pem")
+	if err != nil {
+		t.Errorf("sorry. can't read privatekey err=%s", err.Error())
+	}
+	rng := rand.Reader
+
+	ciphertext, _ := base64.StdEncoding.DecodeString(base64Text)
+
+	t.Logf("ciphertext = %s", ciphertext)
+	// 復号
+	plaintext, err := rsa.DecryptOAEP(sha1.New(), rng, privateKey, ciphertext, nil)
+	if err != nil {
+		t.Errorf("Error from decryption: %s\n", err)
+		return
+	}
+
+	t.Logf("Plaintext: %s\n", string(plaintext))
+
+	if expectMessage != string(plaintext) {
+		t.Fatalf("expect %s, but %s", expectMessage, string(plaintext))
+	}
+
+}
+
+func TestDecforSwCrypt(t *testing.T) {
 	base64Text := "BBQQRNm9c+magYbq3eXN7ydzdCKSOGy1FmjHIwT2PzLTHnJbZ65f83RY3N8/iyNhBB+RSe9SjXZYz8qIr529bTSyUSmcxeK5Etsc8wsGLLwXkbdcLrYImiU0YC6ymIKAzxeJT9ObMMcopdsUYrxe2laVg6Wio+29RLs1WWaELJvWml2rkMX/uWEm9VpWqcwiBZmBT9GyrR8C71yOr5dtsuxMIIOJlhqq7S2FYRix3GStZyHRXnOBY+hob9+XFVXDMtVkibi8Sx5wK3asD0zrniz2o0DX7GDkZvDbqj45zi16kXv8ZpxIl9jH343NfV8YX7g/rbmI6P/rB6AUjjb7gQ=="
 	expectMessage := "hello ios rsa"
 
