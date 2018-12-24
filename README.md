@@ -1,10 +1,10 @@
-# rsa
 
-Goで暗号化と復号を行うことは至って簡単ですが
-iOSとGoで暗号化と復号をおこった場合、なかなかスムーズに行きませんでした。
+# はじめに
 
-クライアント: iOS
-サーバサイド: Go
+rsa暗号化についてはいくつかオプションがあります。
+特にpaddingアルゴリズムの影響によるオプションです。
+
+前提として選択暗号文攻撃に強いRSA-OAEPに絞った調査を行っています。
 
 # 秘密鍵と公開鍵の準備
 
@@ -17,13 +17,14 @@ openssl rsa -pubout < private_key.pem > public_key.key
 
 # Goだけで暗号化、復号化を行う
 
+OAEPについてはいかに情報があります。
+https://ja.wikipedia.org/wiki/Optimal_Asymmetric_Encryption_Padding
 
+Goは割と素直な感じで
 
-RSA暗号化と言っても一言で言ってPrivateKeyのビット数やpaddingアルゴリズムの指定など
-細かなオプションがあります。
+![oaep](https://upload.wikimedia.org/wikipedia/commons/1/18/Oaep-diagram-20080305.png)
 
-今回はPrivateKeyのビット数は2048,ハッシュ関数はSHA256
-paddingアルゴリズムはOAEPを使います。
+上記の概念図おけるG,Hのハッシュアルゴリズムの指定とrに当たるラベルの指定ができます。
 
 
 ```go
@@ -162,75 +163,58 @@ ok  	github.com/m0a-mystudy/rsa/go	(cached)
 
 参考:https://github.com/topics/rsa
 
-自分は何も考えず601 starのSwiftyRSAを最初に採用してしまいました。全てはこれが良くなかった。
-結論から言ってSwCryptを選んでおけばいろいろ検証にハマることもなかったですのに。
+上記２つのライブラリについて実際に暗号化と復号化を行ってみます。
 
+## SwiftyRSAの場合
 
-* SwCryptの実行例
+歴史的経緯なのかhashアルゴリズムとラベルの指定をサポートしておらず、
+sha1,ラベルは空で固定のようです。
+
+### iOSで暗号化
 
 ```swift
 
-//
-//  rsa_testTests.swift
-//  rsa_testTests
-//
-//  Created by Makoto Abe on 2018/12/19.
-//  Copyright © 2018 m0a. All rights reserved.
-//
-
 import XCTest
-import SwCrypt
+import SwiftyRSA
 
 @testable import rsa_test
 
 class rsa_testTests: XCTestCase {
-    var public_key: Data = Data()
+    var publicKey: Data = Data()
+    var publicKeyPem: String = ""
     
     override func setUp() {
-        let filepath = Bundle.main.path(forResource: "public_key", ofType: "pem")
-        let pemData = try! String(contentsOfFile: filepath!)
-        self.public_key = try! SwKeyConvert.PublicKey.pemToPKCS1DER(pemData)
+        let publicKeyPath = Bundle.main.path(forResource: "public_key", ofType: "pem") ?? ""
+        self.publicKeyPem = try! String(contentsOfFile: publicKeyPath)
     }
-
-    func testEnc() {
+    
+    func testEncOAEP_SwiftyRSA() {
+        let publicKey = try! PublicKey.publicKeys(pemEncoded: self.publicKeyPem)[0]
         let expectString = "hello ios rsa"
-        guard let data = expectString.data(using: .utf8) else {
-            return
-        }
-        
-        guard let tag = "label".data(using: .utf8) else {
-            return
-        }
-        
-        do {
-            // 暗号化
-            let chiperText = try CC.RSA.encrypt(data, derKey: self.public_key, tag: tag, padding: .oaep, digest: .sha256)
-            print("chiperText[\(chiperText.base64EncodedString())]")
-        } catch {
-            XCTAssertNotNil(error)
-        }
+        let clear = try! ClearMessage(string: expectString, using: .utf8)
+        let encrypted = try! clear.encrypted(with: publicKey, padding: .OAEP)
+        print("SwiftyRSA chiperText[\(encrypted.base64String)]")
     }
+    
 }
 
 ```
 
-上記の出力結果抜粋
+出力例はこちら
 
 ```
-Test Case '-[rsa_testTests.rsa_testTests testEnc]' started.
-chiperText[BBQQRNm9c+magYbq3eXN7ydzdCKSOGy1FmjHIwT2PzLTHnJbZ65f83RY3N8/iyNhBB+RSe9SjXZYz8qIr529bTSyUSmcxeK5Etsc8wsGLLwXkbdcLrYImiU0YC6ymIKAzxeJT9ObMMcopdsUYrxe2laVg6Wio+29RLs1WWaELJvWml2rkMX/uWEm9VpWqcwiBZmBT9GyrR8C71yOr5dtsuxMIIOJlhqq7S2FYRix3GStZyHRXnOBY+hob9+XFVXDMtVkibi8Sx5wK3asD0zrniz2o0DX7GDkZvDbqj45zi16kXv8ZpxIl9jH343NfV8YX7g/rbmI6P/rB6AUjjb7gQ==]
+SwiftyRSA chiperText[eCezV7gNUMHWNmS2ayePXIe64b7Rk86Is98/uZgPv1g3JLrQieUArhM1gAaJyZaK7Yf/BOqe8/CQ7O2ybKIZDu3HCbwEPhYjoKpNeXVNaIRdiLJa3onmFM5mQJdU+Zr7cH6GOvmx29ZKR4mC6p8BrRqZnh6s3D/5PcGrKqrgh8X9ry9F1ZYptDf36ZO4YdBNKTYy9mVoYqGFlmmiZWAQvvCufnte+PCr5Gxw6DsADYt1ByiDeron+hZMzK9PPiZup8fquAXdXup+PXqlJIvXFyrCneocrsBY1YA8xTfJlxF/ZHUPNZaSb0QiM6PJj3xsU3vg5ZUT/OcgTYhI7lW5SQ==]
 ```
 
-生成された文字列をGoで復号してみます。
-(追加したテストのみ記載します)
+### Goで復号
 
 ```go
-
 package rsa_test
 
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
 	"encoding/base64"
@@ -241,8 +225,144 @@ import (
 	"testing"
 )
 
-func TestDecforiOS(t *testing.T) {
-	base64Text := "BBQQRNm9c+magYbq3eXN7ydzdCKSOGy1FmjHIwT2PzLTHnJbZ65f83RY3N8/iyNhBB+RSe9SjXZYz8qIr529bTSyUSmcxeK5Etsc8wsGLLwXkbdcLrYImiU0YC6ymIKAzxeJT9ObMMcopdsUYrxe2laVg6Wio+29RLs1WWaELJvWml2rkMX/uWEm9VpWqcwiBZmBT9GyrR8C71yOr5dtsuxMIIOJlhqq7S2FYRix3GStZyHRXnOBY+hob9+XFVXDMtVkibi8Sx5wK3asD0zrniz2o0DX7GDkZvDbqj45zi16kXv8ZpxIl9jH343NfV8YX7g/rbmI6P/rB6AUjjb7gQ=="
+func TestDecforSwiftyRSA(t *testing.T) {
+	base64Text := "lqEicpwE0xPg9iXdn2xSQLeoIEkwvKdxGBMrjwHxW2S5x7IuhrWCnWnFZ1w0nd21nCuZfveW29nCzekvJEBji8W+HcbwQUapIcRoENp6+IkcjISnOR9hR5ZOJBUNP7X0eLniFHuqPXuySWuzGXJIfP2P8iBwFEC0AvUTGUfpXdYEoRP5uEExHBdxw/WywtjocGkgz+sbmBzgCdN+BmAas8h/RdsYI2D83VyvG492Hp45SR+vgoyv4TbqcWZqdPC6T4ZFurQvZKlMKT5Xfhe4WTQUVL1fKvFWGkxXhIesKmxZpvIfKqLF7ZuGs13RJaIDvF6i71fvmF7rN2fvE/iuoA=="
+	expectMessage := "hello ios rsa"
+
+	privateKey, err := readRsaPrivateKey("private_key.pem")
+	if err != nil {
+		t.Errorf("sorry. can't read privatekey err=%s", err.Error())
+	}
+	rng := rand.Reader
+
+	ciphertext, _ := base64.StdEncoding.DecodeString(base64Text)
+
+	t.Logf("ciphertext = %s", ciphertext)
+	// 復号
+	plaintext, err := rsa.DecryptOAEP(sha1.New(), rng, privateKey, ciphertext, nil)
+	if err != nil {
+		t.Errorf("Error from decryption: %s\n", err)
+		return
+	}
+
+	t.Logf("Plaintext: %s\n", string(plaintext))
+
+	if expectMessage != string(plaintext) {
+		t.Fatalf("expect %s, but %s", expectMessage, string(plaintext))
+	}
+
+}
+
+func readRsaPrivateKey(pemFile string) (*rsa.PrivateKey, error) {
+	bytes, err := ioutil.ReadFile(pemFile)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(bytes)
+	if block == nil {
+		return nil, errors.New("invalid private key data")
+	}
+
+	var key *rsa.PrivateKey
+	if block.Type == "RSA PRIVATE KEY" {
+		key, err = x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+	} else if block.Type == "PRIVATE KEY" {
+		keyInterface, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+		if err != nil {
+			return nil, err
+		}
+		var ok bool
+		key, ok = keyInterface.(*rsa.PrivateKey)
+		if !ok {
+			return nil, errors.New("not RSA private key")
+		}
+	} else {
+		return nil, fmt.Errorf("invalid private key type : %s", block.Type)
+	}
+
+	key.Precompute()
+
+	if err := key.Validate(); err != nil {
+		return nil, err
+	}
+
+	return key, nil
+}
+
+```
+
+出力結果
+
+```
+$ go test -v  github.com/m0a-mystudy/rsa/go -run ^(TestDecforSwiftyRSA)$
+=== RUN   TestDecforSwiftyRSA
+--- PASS: TestDecforSwiftyRSA (0.00s)
+?��x��{�={�Ik�rH|�� p@��G�]���A1q�����pi ����%ݟl�~`��E�#`��\�v�9I�����6�qfjt�O�E��/d�L)>W~�Y4T�_*�VLW���*lY��*��훆�]�%��^��W�^�7g��
+    enc_dec_test.go:37: Plaintext: hello ios rsa
+PASS
+ok  	github.com/m0a-mystudy/rsa/go	0.015s
+```
+
+
+## SwCryptの場合
+
+```swift
+
+import XCTest
+import SwCrypt
+
+@testable import rsa_test
+
+class rsa_testTests: XCTestCase {
+    var publicKey: Data = Data()
+    var publicKeyPem: String = ""
+    
+    override func setUp() {
+        let publicKeyPath = Bundle.main.path(forResource: "public_key", ofType: "pem") ?? ""
+        self.publicKeyPem = try! String(contentsOfFile: publicKeyPath)
+        self.publicKey = try! SwKeyConvert.PublicKey.pemToPKCS1DER(self.publicKeyPem)
+    }
+
+    func testEncOAEP_SwCrypt() {
+        let expectString = "hello ios rsa"
+        guard let data = expectString.data(using: .utf8) else {
+            return
+        }
+        
+        guard let tag = "label".data(using: .utf8) else {
+            return
+        }
+        
+        do {
+        let chiperText = try CC.RSA.encrypt(data, derKey: self.publicKey, tag: tag, padding: .oaep, digest: .sha256)
+            print("SwCrypt chiperText[\(chiperText.base64EncodedString())]")
+        } catch {
+            XCTAssertNotNil(error)
+        }
+    }
+        
+}
+
+
+```
+
+上記の出力結果抜粋
+
+```
+SwCrypt chiperText[N9QE8lG5A9LRRprfwkzAxoldJkNSJqEQ/gLAcNjMFbLgcGu2yffY3x91/DOCApsxtAU3I7GTCnk0TOTV5Y32zVqOE7S+GksCFFa7iDLsqYvQbKJZXcb8bTe4p93SPU+RBkH0r/H8NBTUDSvNtARcXntqWNwr0FNAW2HH/Ht+ZmL1pWMa0MmdXLc/+4S/KFjlip/b5neMw6EoQkfNNDz8i7+IHiIpz+vJ2ZFvpf8RGXLgUTMGdUrQfv+XyLZZAnYny5a8HzuMbEcSunez0G7T25NGj6ubJJ2zalLACV1GysolOAJFn6YD6jSukDGQmHKlL1JOkKhqUm9EZT6Mw7wBkQ==]
+```
+
+生成された文字列をGoで復号してみます。
+(追加したテストのみ記載します)
+
+```go
+
+func TestDecforSwCrypt(t *testing.T) {
+	base64Text := "N9QE8lG5A9LRRprfwkzAxoldJkNSJqEQ/gLAcNjMFbLgcGu2yffY3x91/DOCApsxtAU3I7GTCnk0TOTV5Y32zVqOE7S+GksCFFa7iDLsqYvQbKJZXcb8bTe4p93SPU+RBkH0r/H8NBTUDSvNtARcXntqWNwr0FNAW2HH/Ht+ZmL1pWMa0MmdXLc/+4S/KFjlip/b5neMw6EoQkfNNDz8i7+IHiIpz+vJ2ZFvpf8RGXLgUTMGdUrQfv+XyLZZAnYny5a8HzuMbEcSunez0G7T25NGj6ubJJ2zalLACV1GysolOAJFn6YD6jSukDGQmHKlL1JOkKhqUm9EZT6Mw7wBkQ=="
 	expectMessage := "hello ios rsa"
 
 	privateKey, err := readRsaPrivateKey("private_key.pem")
@@ -286,53 +406,15 @@ PASS
 ok  	github.com/m0a-mystudy/rsa/go	0.015s
 ```
 
-# SwiftyRSAの場合
-
-Goの復号化関数のインターフェースを見てみると
-
-```go
-
-func DecryptOAEP(hash hash.Hash, random io.Reader, priv *PrivateKey, ciphertext []byte, label []byte) ([]byte, error) {
-```
-
-* hashアルゴリズムの指定
-* privateKey
-* 暗号文
-* label
-
-といった引数が必要ですがSwiftyRSAの場合
-
-```swift
-let publicKey = try PublicKey(pemNamed: "public")
-let clear = try ClearMessage(string: "Clear Text", using: .utf8)
-// 暗号化
-let encrypted = try clear.encrypted(with: publicKey, padding: .PKCS1)
-```
-
-*hashアルゴリズムの指定
-*label
-
-と言った指定ができないようです。引数パラメータの足りなさから除外を検討すべきでした。
-
-どうももともとappleが提供しているライブラリ自体に上記パラメータを設定する余地が無いようです。
-
-```swift
-OSStatus SecKeyEncrypt(
-                       SecKeyRef           key,
-                       SecPadding          padding,
-                       const uint8_t		*plainText,
-                       size_t              plainTextLen,
-                       uint8_t             *cipherText,
-                       size_t              *cipherTextLen)
-__OSX_AVAILABLE_STARTING(__MAC_10_7, __IPHONE_2_0);
-
-```
 
 
 
-# 結論
 
-Goと組み合わせるならSwCryptを使っておこう
+# 最後に
+
+テストとして書いたコードはこちらにおいておきます
+https://github.com/m0a-mystudy/rsa
+
 
 
 
